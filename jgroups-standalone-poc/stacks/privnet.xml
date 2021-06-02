@@ -7,12 +7,12 @@
 	 thread_pool.min_threads="0"
          thread_pool.max_threads="200"
          thread_pool.keep_alive_time="30000"/>
-     <RELAY
-         site="SiteA.PrivNet"
-         bridge_props="/home/mhunter/JGroupsTests/sitea.xml"
-	 bridge_name="SiteAInterZone"
-         relay="true"
-	 />
+    <RELAY
+        site="SiteA.PrivNet"
+        bridge_props="/home/mhunter/JGroupsTests/sitea.xml"
+        bridge_name="SiteAInterZone"
+        relay="true"
+    />
     <RED/>
     <PING />
     <MERGE3 max_interval="30000"

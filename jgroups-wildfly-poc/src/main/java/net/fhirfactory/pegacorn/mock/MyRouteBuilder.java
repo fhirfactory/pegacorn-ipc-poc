@@ -1,19 +1,15 @@
 package net.fhirfactory.pegacorn.mock;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import org.apache.camel.CamelContext;
-import org.apache.camel.Endpoint;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.builder.component.dsl.JgroupsComponentBuilderFactory;
-import org.apache.camel.component.jgroups.JGroupsComponent;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
-import org.jgroups.View;
 
-import java.util.List;
+import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 @ApplicationScoped
 public class MyRouteBuilder extends RouteBuilder {
@@ -25,24 +21,26 @@ public class MyRouteBuilder extends RouteBuilder {
     CamelContext ctx;
 
     @Inject
-    MyTargetWriter targetedWriter;
+    PegacornNodeEchoPointServer endpointServer;
 
     Address actualAddress = null;
 
+    @PostConstruct
+    private void initialise(){
+        endpointServer.initialise();
+    }
+
     @Override
     public void configure() throws Exception {
-        JChannel ladonToIris = new JChannel().name("IrisClient");
-        JgroupsComponentBuilderFactory.jgroups().channel(ladonToIris).register(ctx, "LadonToIris");
-
-        JChannel irisToLadon = new JChannel().name("LadonServer");
-        JgroupsComponentBuilderFactory.jgroups().channel(irisToLadon).register(ctx, "IrisToLadon");
+        JChannel testEndpoint = new JChannel().name("TestEndpoint");
+        JgroupsComponentBuilderFactory.jgroups().channel(testEndpoint).register(ctx, "TestEndpointComponent");
 
     	from("timer:LadonIs")
                 .bean(timeInformationGenerator, "tellMeTheTime(\"LadonToIris\")")
-                .to("LadonToIris:ladon-iris")
-                .bean(targetedWriter, "sendMessage");
+                .to("TestEndpointComponent:TestEndpoint")
+                .bean(endpointServer, "performScan");
 
-    	from("IrisToLadon:ladon-iris?enableViewMessages=true")
+    	from("TestEndpointComponent:TestEndpoint?enableViewMessages=true")
                 .log(LoggingLevel.INFO, "Ladon (from Iris): Content on the wire --> ${body}");
     }
 

@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
@@ -24,14 +25,17 @@ public class PegacornNodeEchoPointServer {
     private static final Logger LOG = LoggerFactory.getLogger(PegacornNodeEchoPointServer.class);
 
     private boolean initialised;
-    private JChannel echoServer;
+
     private RpcDispatcher rpcDispatcher;
     private ObjectMapper jsonMapper;
+    private JChannel echoServer;
     protected static final long RPC_UNICAST_TIMEOUT = 1000;
     protected static final long RPC_MULTICAST_TIMEOUT = 5000;
 
     @Inject
     private CamelContext camelContext;
+
+
 
     public PegacornNodeEchoPointServer(){
         initialised = false;
@@ -62,7 +66,8 @@ public class PegacornNodeEchoPointServer {
     void initialiseJGroupsChannel(){
         try {
             LOG.debug(".initialiseJGroupsChannel(): Entry");
-            this.echoServer = new JChannel("pegacornudp");
+
+            this.echoServer = new JChannel("dmz.xml");
             LOG.trace(".initialiseJGroupsChannel(): Channel initialised, now setting channel name");
             getEchoServer().name("Zone.DMZ.Node0");
             getEchoServer().setDiscardOwnMessages(true);
@@ -76,7 +81,7 @@ public class PegacornNodeEchoPointServer {
         }
     }
 
-    private void performScan(){
+    public void performScan(){
         // 1st, do a MultiCast test....
         multicastScan();
         // Now do Unicast...
