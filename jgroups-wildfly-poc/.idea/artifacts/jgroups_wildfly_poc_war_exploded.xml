@@ -1,0 +1,77 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="jgroups-wildfly-poc:war exploded">
+    <output-path>$PROJECT_DIR$/target/jgroups-wildfly-poc</output-path>
+    <properties id="maven-jee-properties">
+      <options>
+        <exploded>true</exploded>
+        <module>jgroups-wildfly-poc</module>
+        <packaging>war</packaging>
+      </options>
+    </properties>
+    <root id="root">
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="jgroups-wildfly-poc" />
+        </element>
+        <element id="directory" name="lib">
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-cdi:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-support:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-management-api:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-util:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-main:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-base:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-mock:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-bean:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-jta:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-core:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-core-engine:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-base-engine:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-core-reifier:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-core-processor:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-core-languages:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-browse:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-cluster:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-core-model:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-controlbus:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-dataformat:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-dataset:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-direct:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-directvm:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-file:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-health:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-language:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-log:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-ref:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-rest:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-tooling-model:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-util-json:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-saga:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-scheduler:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-seda:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-stub:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-timer:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-validator:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-vm:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-xpath:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-xslt:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-xml-jaxb:3.8.0" />
+          <element id="library" level="project" name="Maven: jakarta.xml.bind:jakarta.xml.bind-api:2.3.3" />
+          <element id="library" level="project" name="Maven: jakarta.activation:jakarta.activation-api:1.2.2" />
+          <element id="library" level="project" name="Maven: com.sun.xml.bind:jaxb-core:2.3.0" />
+          <element id="library" level="project" name="Maven: com.sun.xml.bind:jaxb-impl:2.3.3" />
+          <element id="library" level="project" name="Maven: com.sun.activation:jakarta.activation:1.2.2" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-xml-jaxp:3.8.0" />
+          <element id="library" level="project" name="Maven: org.slf4j:slf4j-api:1.7.30" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-jgroups:3.8.0" />
+          <element id="library" level="project" name="Maven: org.jgroups:jgroups:4.2.11.Final" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-componentdsl:3.8.0" />
+          <element id="library" level="project" name="Maven: org.apache.camel:camel-api:3.8.0" />
+        </element>
+      </element>
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/target/jgroups-wildfly-poc/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="javaee-facet-resources" facet="jgroups-wildfly-poc/web/Web" />
+    </root>
+  </artifact>
+</component>
