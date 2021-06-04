@@ -1,1 +1,5 @@
 /jgroups-wildfly-poc/.idea/
+
+jgroups-standalone-poc/.idea/
+
+*.iml

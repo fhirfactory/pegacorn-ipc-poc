@@ -3,6 +3,7 @@ package net.fhirfactory.pegacorn.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.camel.CamelContext;
+import org.apache.commons.lang3.StringUtils;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.blocks.RequestOptions;
@@ -199,7 +200,7 @@ public class PegacornNodeEchoPointServer {
 
     private PegacornNodeEchoRPCPacket stringToPacket(String packetString){
         LOG.debug(".stringToPacket(): Entry, packetString->{}", packetString);
-        if(packetString.isEmpty()){
+        if(StringUtils.isBlank(packetString)){
             PegacornNodeEchoRPCPacket responsePacket = new PegacornNodeEchoRPCPacket();
             responsePacket.setPayload(null);
             responsePacket.setTargetAddressName(getMyAddress().toString());

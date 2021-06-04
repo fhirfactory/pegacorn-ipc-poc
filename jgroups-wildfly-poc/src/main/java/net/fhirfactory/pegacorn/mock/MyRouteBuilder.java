@@ -35,13 +35,13 @@ public class MyRouteBuilder extends RouteBuilder {
         JChannel testEndpoint = new JChannel().name("TestEndpoint");
         JgroupsComponentBuilderFactory.jgroups().channel(testEndpoint).register(ctx, "TestEndpointComponent");
 
-    	from("timer:LadonIs")
-                .bean(timeInformationGenerator, "tellMeTheTime(\"LadonToIris\")")
+    	from("timer:EndpointHeartbeat?delay=10000&period=5000")
+                .bean(timeInformationGenerator, "tellMeTheTime(\"EndpointServerInstance\")")
                 .to("TestEndpointComponent:TestEndpoint")
                 .bean(endpointServer, "performScan");
 
     	from("TestEndpointComponent:TestEndpoint?enableViewMessages=true")
-                .log(LoggingLevel.INFO, "Ladon (from Iris): Content on the wire --> ${body}");
+                .log(LoggingLevel.INFO, "EndpointTest (from EndpointServer): Content on the wire --> ${body}");
     }
 
 }
