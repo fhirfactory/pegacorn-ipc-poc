@@ -20,6 +20,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @ApplicationScoped
 public class PegacornNodeEchoPointServer {
@@ -68,13 +69,14 @@ public class PegacornNodeEchoPointServer {
         try {
             LOG.debug(".initialiseJGroupsChannel(): Entry");
 
-            this.echoServer = new JChannel("dmz.xml");
+            this.echoServer = new JChannel("sitea.xml");
             LOG.trace(".initialiseJGroupsChannel(): Channel initialised, now setting channel name");
-            getEchoServer().name("Zone.DMZ.Node0");
+            String name = "node-" + UUID.randomUUID().toString();
+            getEchoServer().name(name);
             getEchoServer().setDiscardOwnMessages(true);
             this.rpcDispatcher = new RpcDispatcher(getEchoServer(), this);
             LOG.trace(".initialiseJGroupsChannel(): connect to cluster");
-            getEchoServer().connect("SiteA");
+            getEchoServer().connect("sitea");
             LOG.debug(".initialiseJGroupsChannel(): Exit, initialisation complete");
         } catch(Exception ex){
             LOG.error(".initialiseJGroupsChannel(): Error --> " + ex.toString());
@@ -112,18 +114,18 @@ public class PegacornNodeEchoPointServer {
     private void unicastScan(){
         LOG.debug(".unicastScan(): Entry");
         List<Address> addressList = getEchoServer().getView().getMembers();
-        LOG.debug("--- Unicast Scan: Start ---");
+        LOG.info("--- Unicast Scan: Start ---");
         for(Address currentAddress: addressList){
             if(getMyAddress().equals(currentAddress)){
-                LOG.debug(".unicastScan(): ScanAddress->{}... is me, not calling myself!", currentAddress);
+                LOG.info(".unicastScan(): ScanAddress->{}... is me, not calling myself!", currentAddress);
             } else {
-                LOG.debug(".unicastScan(): ScanAddress->{}", currentAddress);
+                LOG.info(".unicastScan(): ScanAddress->{}", currentAddress);
                 PegacornNodeEchoRPCPacket outcome = executeRPC(currentAddress);
-                LOG.debug(".unicastScan(): outcome->{}", outcome);
+                LOG.info(".unicastScan(): outcome->{}", outcome);
                 LOG.info("EndPoint Found:{}", outcome.getSourceAddressName());
             }
         }
-        LOG.debug("--- Unicast Scan: End ---");
+        LOG.info("--- Unicast Scan: End ---");
         LOG.debug(".unicastScan(): Entry");
     }
 

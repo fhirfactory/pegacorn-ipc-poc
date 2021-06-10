@@ -3,16 +3,18 @@
         xsi:schemaLocation="urn:org:jgroups http://www.jgroups.org/schema/jgroups.xsd"
         >
         <TCP bind_addr="${jgroups.bind_addr:site_local}"
-         bind_port="7600"
+         bind_port="${jgroups.bind_port:7600}"
+         external_addr="${jgroups.external_addr}"
+         external_port="${jgroups.external_port}"
          thread_pool.min_threads="0"
          thread_pool.max_threads="200"
          thread_pool.keep_alive_time="30000"/>
     <RED/>
 
     <TCPPING async_discovery="true"
-             initial_hosts="vm0.dmz.sitea[7600],vm0.privnet.sitea[7600]"
+             initial_hosts="privnetvm0[7600],dmzvm0[7600]"
              return_entire_cache="true"
-             port_range="0"/>
+             port_range="2"/>
     <MERGE3  min_interval="10000"
              max_interval="30000"/>
     <FD_SOCK/>
