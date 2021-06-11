@@ -1,0 +1,5 @@
+---
+name: pegacorn-ipc-poc
+version: 1.0.0-SNAPSHOT
+description: JGroups inter-processor communication
+icon: img/icons/camel.svg

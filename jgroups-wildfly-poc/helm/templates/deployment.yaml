@@ -1,0 +1,178 @@
+---
+apiVersion: apps/v1 
+kind: Deployment
+metadata:
+  annotations:
+    fabric8.io/metrics-path: dashboard/file/camel-routes.json/?var-project={{ .Values.serviceName }}&var-version={{ .Values.imageTag }}
+  labels:
+    app: {{ .Values.serviceName }}
+    version: "{{ .Values.imageTag }}"
+  name: {{ .Values.serviceName }}
+spec:
+  replicas: {{ .Values.numOfPods | default 2 }}
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: {{ .Values.serviceName }}
+  template:
+    metadata:
+      annotations:
+        fabric8.io/metrics-path: dashboard/file/camel-routes.json/?var-project={{ .Values.serviceName }}&var-version={{ .Values.imageTag }}
+      labels:
+        app: {{ .Values.serviceName }}
+        version: "{{ .Values.imageTag }}"
+        date: "{{ date "20060102-150405" .Release.Time }}"
+    spec:
+      {{- if (.Values.acrSecretName) }} 
+      imagePullSecrets:
+        - name: {{ .Values.acrSecretName }}
+      {{- end }}
+#      affinity:
+#        nodeAffinity:
+#          preferredDuringSchedulingIgnoredDuringExecution:
+#          - weight: 1
+#            preference:
+#              matchExpressions:
+#              - key: computeResources
+#                operator: In
+#                values:
+#                - High
+      hostNetwork: true
+      containers:
+      - env:
+        - name: TRUSTSTORE_PASSWORD
+          valueFrom:
+           secretKeyRef:
+            name: {{ .Values.serviceName }}-secrets
+            key: truststorePassword
+        - name: KEY_PASSWORD
+          valueFrom:
+           secretKeyRef:
+            name: {{ .Values.serviceName }}-secrets
+            key: keyPassword
+        - name: AUTHORISATION_REALM_NAME
+          value: {{ .Values.authorisationRealmName }}
+        - name: AUTHORISATION_SERVER_HOST_AND_PORT
+          value: {{ .Values.authorisationServerHostAndPort }}
+        {{- if (.Values.authorisationExternalRealmURL) }} 
+        - name: EXTERNAL_REALM_URL
+          value: {{ .Values.authorisationExternalRealmURL }}          
+        {{- end }}
+        {{- if (.Values.wildflyAdminUser) }} 
+        - name: WILDFLY_MANAGEMENT_USER
+          value: {{ .Values.wildflyAdminUser }}
+        # TODO this should be a secret, or potentially no management user at all
+        - name: WILDFLY_MANAGEMENT_PASSWORD
+          value: {{ .Values.wildflyAdminPwd }}
+        {{- end }}
+        - name: WILDFLY_LOG_LEVEL
+          value: "{{ .Values.wildflyLogLevel | default "WARN" }}"
+        - name: JAVAX_NET_DEBUG
+          value: "{{ .Values.javaxNetDebug | default "none" }}"
+        - name: WILDFLY_ENABLE_DEBUG
+          value: "{{ .Values.wildflyEnableDebug | default "no" }}"
+        - name: KUBERNETES_SERVICE_NAME
+          value: {{ .Values.serviceName }}
+        - name: {{ upper .Values.serviceName | replace "-" "_" }}_{{ upper .Release.Namespace | replace "-" "_" }}_KUBERNETES_SERVICE_NAME
+          value: {{ .Values.serviceName }}
+        - name: KUBERNETES_NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: {{ upper .Values.serviceName | replace "-" "_" }}_{{ upper .Release.Namespace | replace "-" "_" }}_KUBERNETES_NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: HELM_RELEASE_TIME
+          value: "{{ date "20060102-150405" .Release.Time }}"
+        - name: JGROUPS_CONFIG
+          value: {{ .Values.clusterConfig }}
+        - name: JGROUPS_CHANNEL
+          value: {{ .Values.channelName }}
+        - name: MY_HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: MY_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: MY_POD_SERVICE_ACCOUNT
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName
+        - name: JVM_MAX_HEAP_SIZE
+          value: "{{ .Values.jvmMaxHeapSizeMB }}m"
+        # Set the minimum memory that will be available on the node to assign to the container to be the jvmMaxHeapSizeMB plus 128 MB 
+        # for the native heap and operation system processes associated with running Java
+        # See https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/#motivation-for-memory-requests-and-limits
+        # and https://www.alibabacloud.com/blog/kubernetes-demystified-restrictions-on-java-application-resources_594108
+        resources:
+          requests:
+            memory: "{{ add 128 .Values.jvmMaxHeapSizeMB }}Mi"
+        image: {{ .Values.dockerRepo }}pegacorn-ipc-poc:{{ .Values.imageTag }}            
+        imagePullPolicy: {{ .Values.imagePullPolicy | default "IfNotPresent" }}
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/bash","-c","echo 192.168.1.25 dmzkube >> /etc/hosts; echo 192.168.2.25 privnetkube >> /etc/hosts"]
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 9990
+            scheme: HTTP
+          initialDelaySeconds: 90
+        name: wildfly
+        ports:
+        {{- if (.Values.wildflyAdminUser) }} 
+        - containerPort: 9993
+          name: admin
+          protocol: TCP
+        {{- end }}
+        {{- if (.Values.wildflyEnableDebug) and (eq .Values.wildflyEnableDebug "Yes") }} 
+        - containerPort: 8787
+          name: debug
+          protocol: TCP
+        {{- end }}
+        - containerPort: 9779
+          name: prometheus
+          protocol: TCP
+        - containerPort: 8778
+          name: jolokia
+          protocol: TCP
+        - containerPort: 7800
+          name: jgroups
+          protocol: TCP
+        - containerPort: 7810
+          name: jgroups-relay
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 9990
+            scheme: HTTP
+          initialDelaySeconds: 90
+        securityContext:
+          privileged: false
+        volumeMounts:
+        - name: certificates
+          mountPath: /var/lib/pegacorn-ssl-certs 
+        - name: clustering
+          mountPath: /opt/jboss/wildfly/jgroups-config    
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 30 }}
+      volumes:
+      - name: certificates
+        hostPath:
+          path: {{ .Values.hostPathCerts }}
+      - name: clustering
+        hostPath:
+          path: {{ .Values.hostPathClustering }}
+

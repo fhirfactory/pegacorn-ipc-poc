@@ -1,0 +1,51 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    {{- if (.Values.dnsEntry) }} 
+    # From https://docs.microsoft.com/en-us/azure/aks/internal-lb#create-an-internal-load-balancer
+    service.beta.kubernetes.io/azure-load-balancer-internal: "{{ .Values.loadBalancerInternal | default true }}"
+#    service.beta.kubernetes.io/azure-dns-label-name: {{ .Values.dnsEntry }}
+    # From https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/rfc2136.md
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.dnsEntry }}
+    {{- end }}    
+    prometheus.io/port: "9779"
+    prometheus.io/scrape: "true"
+  labels:
+    app: {{ .Values.serviceName }}
+    version: "{{ .Values.imageTag }}"
+  name: {{ .Values.serviceName }}
+spec:
+  ports:  
+  {{- if (.Values.wildflyAdminUser) }} 
+  - name: admin
+    port: 9993
+    protocol: TCP
+    targetPort: 9993
+    nodePort: 32410
+  {{- end }}
+  {{- if (.Values.wildflyEnableDebug) and (eq .Values.wildflyEnableDebug "Yes") }} 
+  - name: debug
+    port: 8787
+    protocol: TCP
+    targetPort: 8787
+    nodePort: 32410
+  {{- end }} 
+  - name: jgroups
+    port: 7800
+    protocol: TCP
+    targetPort: 7800
+    nodePort: 30660
+  - name: jgroups-relay
+    port: 7810
+    protocol: TCP
+    targetPort: 7810
+    nodePort: 30610
+  selector:
+    app: {{ .Values.serviceName }}
+  type: {{ .Values.serviceType | default "LoadBalancer" }}
+  {{- if (.Values.loadBalancerIP) }} 
+  loadBalancerIP: {{ .Values.loadBalancerIP }}
+  {{- end }}
+
