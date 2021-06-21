@@ -7,30 +7,40 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="urn:org:jgroups http://www.jgroups.org/schema/jgroups.xsd"
         >
-    <UDP
-         mcast_port="${jgroups.udp.mcast_port:45588}"
-         thread_pool.min_threads="0"
-         thread_pool.max_threads="200"
-         thread_pool.keep_alive_time="30000"/>
+    <TCP
+            bind_addr="match-interface:eth0"
+            bind_port="7800"
+            recv_buf_size="5M"
+            send_buf_size="1M"
+            max_bundle_size="64K"
+            enable_diagnostics="true"
+            thread_naming_pattern="cl"
+            thread_pool.min_threads="0"
+            thread_pool.max_threads="500"
+            thread_pool.keep_alive_time="30000" />
     <RELAY
          site="SiteA.DMZ"
-         bridge_props="/home/mhunter/JGroupsTests/sitea.xml"
+         bridge_props="/opt/jboss/wildfly/jgroups-config/sitea.xml"
          bridge_name="SiteAInterZone"
          relay="true"
 	 />
-    <RED/>
-    <PING />
+    <org.jgroups.protocols.kubernetes.KUBE_PING
+        port_range="1"
+        namespace="${KUBERNETES_NAMESPACE:site-a}"
+		labels="${KUBERNETES_LABELS:app=fhirbreak-techone}"
+	/>
     <MERGE3 max_interval="30000"
             min_interval="10000"/>
     <FD_SOCK/>
     <FD_ALL3/>
     <VERIFY_SUSPECT timeout="1500"  />
     <BARRIER />
-    <pbcast.NAKACK2 xmit_interval="500"/>
+    <pbcast.NAKACK2 use_mcast_xmit="false"
+					discard_delivered_msgs="true"/>
     <UNICAST3 xmit_interval="500" />
     <pbcast.STABLE desired_avg_gossip="50000"
                    max_bytes="4M"/>
-    <pbcast.GMS print_local_addr="true" join_timeout="1000"/>
+    <pbcast.GMS print_local_addr="false" join_timeout="5000"/>
     <UFC max_credits="10M"
          min_threshold="0.4"/>
     <MFC max_credits="10M"
