@@ -33,7 +33,7 @@ public class MyRouteBuilder extends RouteBuilder {
     @Override
     public void configure() throws Exception {
 
-    	from("timer:EndpointHeartbeat?delay=10000&period=5000")
+    	from("timer:EndpointHeartbeat?delay=5000&period=30000")
                 .bean(timeInformationGenerator, "tellMeTheTime(\"EndpointServerInstance\")")
                 .bean(endpointServer, "performScan");
     }

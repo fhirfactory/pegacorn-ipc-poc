@@ -18,8 +18,10 @@ import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.sql.Date;
 import java.time.Instant;
 import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -31,13 +33,11 @@ public class PegacornNodeEchoPointServer {
     private RpcDispatcher rpcDispatcher;
     private ObjectMapper jsonMapper;
     private JChannel echoServer;
-    protected static final long RPC_UNICAST_TIMEOUT = 1000;
-    protected static final long RPC_MULTICAST_TIMEOUT = 5000;
+    protected static final long RPC_UNICAST_TIMEOUT = 10000;
+    protected static final long RPC_MULTICAST_TIMEOUT = 20000;
 
     @Inject
     private CamelContext camelContext;
-
-
 
     public PegacornNodeEchoPointServer(){
         initialised = false;
@@ -67,17 +67,20 @@ public class PegacornNodeEchoPointServer {
 
     void initialiseJGroupsChannel(){
         try {
-            LOG.debug(".initialiseJGroupsChannel(): Entry");
-
-            this.echoServer = new JChannel("sitea.xml");
-            LOG.trace(".initialiseJGroupsChannel(): Channel initialised, now setting channel name");
+            LOG.info(".initialiseJGroupsChannel(): Entry");
+            String stackName = System.getenv("MY_STACK");
+            if(StringUtils.isBlank(stackName)){
+                LOG.error("Could not resolve stackName, stackName->{}", stackName);
+            }
+            this.echoServer = new JChannel(stackName);
+            LOG.info(".initialiseJGroupsChannel(): Channel initialised, now setting channel name");
             String name = "node-" + UUID.randomUUID().toString();
             getEchoServer().name(name);
             getEchoServer().setDiscardOwnMessages(true);
             this.rpcDispatcher = new RpcDispatcher(getEchoServer(), this);
-            LOG.trace(".initialiseJGroupsChannel(): connect to cluster");
+            LOG.info(".initialiseJGroupsChannel(): connect to cluster");
             getEchoServer().connect("sitea");
-            LOG.debug(".initialiseJGroupsChannel(): Exit, initialisation complete");
+            LOG.info(".initialiseJGroupsChannel(): Exit, initialisation complete");
         } catch(Exception ex){
             LOG.error(".initialiseJGroupsChannel(): Error --> " + ex.toString());
             getEchoServer().close();
@@ -115,17 +118,29 @@ public class PegacornNodeEchoPointServer {
         LOG.debug(".unicastScan(): Entry");
         List<Address> addressList = getEchoServer().getView().getMembers();
         LOG.info("--- Unicast Scan: Start ---");
+        Long fullScanTimeStart = Date.from(Instant.now()).getTime();
+        int endpointCount = 0;
         for(Address currentAddress: addressList){
             if(getMyAddress().equals(currentAddress)){
                 LOG.info(".unicastScan(): ScanAddress->{}... is me, not calling myself!", currentAddress);
             } else {
+                endpointCount += 1;
                 LOG.info(".unicastScan(): ScanAddress->{}", currentAddress);
-                PegacornNodeEchoRPCPacket outcome = executeRPC(currentAddress);
-                LOG.info(".unicastScan(): outcome->{}", outcome);
-                LOG.info("EndPoint Found:{}", outcome.getSourceAddressName());
+                PegacornNodeEchoRPCPacket finalOutcome = null;
+                Long timeStart = Date.from(Instant.now()).getTime();
+                int endpointIteration = 0;
+                for(int counter=0; counter < 1000; counter += 1) {
+                    PegacornNodeEchoRPCPacket outcome = executeRPC(currentAddress);
+                    finalOutcome = outcome;
+                    endpointIteration += 1;
+                }
+                Long timeFinish = Date.from(Instant.now()).getTime();
+                //LOG.info(".unicastScan(): ", finalOutcome);
+                LOG.info("EndPoint:{}, iterations:{}, time:{}", finalOutcome.getSourceAddressName(), endpointIteration, (timeFinish-timeStart));
             }
         }
-        LOG.info("--- Unicast Scan: End ---");
+        Long fullScanTimeEnd = Date.from(Instant.now()).getTime();
+        LOG.info("--- Unicast Scan: End ---, EndpointCount->{}, Duration->{}", endpointCount, (fullScanTimeEnd-fullScanTimeStart));
         LOG.debug(".unicastScan(): Entry");
     }
 

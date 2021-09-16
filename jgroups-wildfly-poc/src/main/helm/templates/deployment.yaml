@@ -1,0 +1,109 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    fabric8.io/metrics-path: dashboard/file/camel-routes.json/?var-project={{ .Values.serviceName }}&var-version={{ .Values.imageTag }}
+  labels:
+    app: jgroups-wildfly-poc
+    provider: fabric8
+    version: 1.0.0
+    group: net.fhirfactory.pegacorn
+  name: jgroups-wildfly-poc
+spec:
+  replicas: 2
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: jgroups-wildfly-poc
+      provider: fabric8
+      group: net.fhirfactory.pegacorn
+  template:
+    metadata:
+      annotations:
+        fabric8.io/metrics-path: dashboard/file/camel-routes.json/?var-project={{ .Values.serviceName }}&var-version={{ .Values.imageTag }}
+      labels:
+        app: jgroups-wildfly-poc
+        provider: fabric8
+        version: "1.0.0-SNAPSHOT"
+        group: net.fhirfactory.pegacorn
+        cluster: privnet
+        date: "{{ date "20060102-150405" .Release.Time }}"
+    spec:
+      containers:
+        - env:
+          - name: WILDFLY_LOG_LEVEL
+            value: "WARN"
+          - name: JAVAX_NET_DEBUG
+            value: "none"
+          - name: WILDFLY_ENABLE_DEBUG
+            value: "no"
+          - name: KUBERNETES_SERVICE_NAME
+            value: {{ .Values.serviceName }}
+          - name: MY_HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: MY_NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: MY_STACK
+            value: "privnet.xml"
+          - name: MY_POD_SERVICE_ACCOUNT
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.serviceAccountName
+          - name: KUBERNETES_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: JVM_MAX_HEAP_SIZE
+            value: "1024m"
+          # Set the minimum memory that will be available on the node to assign to the container to be the jvmMaxHeapSizeMB plus 128 MB
+          # for the native heap and operation system processes associated with running Java
+          # See https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/#motivation-for-memory-requests-and-limits
+          # and https://www.alibabacloud.com/blog/kubernetes-demystified-restrictions-on-java-application-resources_594108
+          resources:
+            requests:
+              memory: "1024Mi"
+          image: localhost:32000/jgroups-wildfly-poc:1.0-SNAPSHOT
+          imagePullPolicy: "Always"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9990
+              scheme: HTTP
+            initialDelaySeconds: 60
+          name: wildfly
+          ports:
+            - containerPort: 8443
+              name: https
+              protocol: TCP
+            - containerPort: 7900
+              name: jgroups
+              protocol: TCP
+            - containerPort: 7600
+              name: jgroups2
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9990
+              scheme: HTTP
+            initialDelaySeconds: 60
+          securityContext:
+            privileged: false
+      terminationGracePeriodSeconds: 30
