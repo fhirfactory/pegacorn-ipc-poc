@@ -1,0 +1,30 @@
+---
+subsystemInstant:
+  solutionName: "Pegacorn"
+  solutionGroup: "net.fhirfactory.poc.jgroups"
+  solutionDescription: "KUBE_PING Proof of Concept"
+  subsystemName: "jgroups-kubeping-poc"
+  subsystemVersion: "1.0.0"
+deploymentMode:
+  deploymentConfig: "systemconfig-kubeping-poc.yaml"
+  kubernetes: true
+  processingPlantReplicationCount: 2
+  concurrent: false
+  usingInternalEncryption: true
+deploymentSites:
+  siteCount: 1
+  site1Name: "Site-A"
+  site2Name: null
+  site3Name: null
+deploymentZone:
+  securityZoneName: "private-poc-network"
+  nameSpace: "site-a"
+subsystemImageProperties:
+  repository: "localhost:32000/"
+  imageName: "jgroups-kubeping-poc"
+  imageVersion: "1.0.0-SNAPSHOT"
+  pullPolicy: "Always"
+loadBalancer:
+  type: "LoadBalancer"
+  ipAddress: "10.123.123.48"
+

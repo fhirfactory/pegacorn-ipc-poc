@@ -1,0 +1,5 @@
+---
+name: pegacorn-kubeping-poc
+version: 1.0.0-SNAPSHOT
+description: KUBE_PING PoC
+icon: img/icons/camel.svg

@@ -5,7 +5,7 @@ import picocli.CommandLine;
 @CommandLine.Command(
         name="PegacornNode",
         description="Pegacorn JGroups Test Node",
-        subcommands = {PegacornNodeEchoPointServer.class, PegacornNodeEchoPointClient.class}
+        subcommands = {PegacornNodeEchoPointServer.class}
 )
 public class PegacornNodeCLI implements Runnable {
     public static void main(String[] args) {

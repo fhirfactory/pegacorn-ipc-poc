@@ -1,10 +1,6 @@
 package net.fhirfactory.poc.jgroups;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class PegacornNodeEchoRPCPacket {
-    private static final Logger LOG = LoggerFactory.getLogger(PegacornNodeEchoRPCPacket.class);
 
     private String targetAddressName;
     private String sourceAddressName;

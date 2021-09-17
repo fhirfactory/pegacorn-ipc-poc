@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
+import org.jgroups.MembershipListener;
+import org.jgroups.View;
 import org.jgroups.blocks.RequestOptions;
 import org.jgroups.blocks.ResponseMode;
 import org.jgroups.blocks.RpcDispatcher;
@@ -15,33 +17,34 @@ import picocli.CommandLine;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @CommandLine.Command(
         name="EchoPointServer",
         description="Prints Called Content and Responds!"
 )
-public class PegacornNodeEchoPointServer implements Runnable{
+public class PegacornNodeEchoPointServer implements Runnable, MembershipListener {
     private static final Logger LOG = LoggerFactory.getLogger(PegacornNodeEchoPointServer.class);
 
     private JChannel echoServer;
     private RpcDispatcher rpcDispatcher;
     private ObjectMapper jsonMapper;
 
-    @CommandLine.Option(names = {"-n", "--nodeName"})
     private String nodeName;
 
-    @CommandLine.Option(names = {"-c", "--clusterName"})
     private String clusterName;
 
-    @CommandLine.Option(names = {"-f", "--configFile"})
-    private String configFile;
-
-    protected static final long RPC_UNICAST_TIMEOUT = 1000;
+    protected static final long RPC_UNICAST_TIMEOUT = 3000;
     protected static final long RPC_MULTICAST_TIMEOUT = 5000;
 
     @Override
     public void run() {
-        LOG.debug("Pegacorn Node Echo Point Client");
+
+        PropertiesRetriever propertiesRetriever = new PropertiesRetriever();
+        this.nodeName = propertiesRetriever.getMandatoryProperty("MY_PROCESSING_PLANT_NAME") + "." + Long.toHexString(UUID.randomUUID().getLeastSignificantBits());
+        this.clusterName = propertiesRetriever.getMandatoryProperty("MY_CLUSTER_NAME");
+
+        LOG.info("Pegacorn Node Echo Point Client");
         jsonMapper = new ObjectMapper();
         initialiseJGroupsChannel();
         eventLoop();
@@ -69,22 +72,42 @@ public class PegacornNodeEchoPointServer implements Runnable{
     }
 
     public String getConfigFile() {
-        return configFile;
+        return ("site-a-private-network-ipc.xml");
     }
+
+
+    @Override
+    public void viewAccepted(View newView) {
+        LOG.warn("JGroup Cluster Membership Change-----------------------------------(Start)--------");
+        List<Address> addressList = newView.getMembers();
+        if(getEchoServer() != null) {
+           LOG.warn("JGroupsCluster->{}", getEchoServer().getClusterName());
+        } else {
+            LOG.warn("JGroupsCluster still Forming");
+        }
+        int counter = 0;
+        for(Address currentAddress: addressList){
+            LOG.warn("["+counter+"]"+" member -> {}", currentAddress);
+            counter += 1;
+        }
+        LOG.warn("JGroup Cluster Membership Change-----------------------------------(End)----------");
+    }
+
+
 
     void initialiseJGroupsChannel(){
         try {
-            LOG.debug(".initialiseJGroupsChannel(): Entry");
-            LOG.trace(".initialiseJGroupsChannel(): initialise the JChannel, configFile-> "+configFile+", nodeName-> "+ nodeName);
-            this.echoServer = new JChannel(configFile);
-            LOG.trace(".initialiseJGroupsChannel(): Channel initialised, now setting channel name");
+            LOG.info(".initialiseJGroupsChannel(): Entry");
+            LOG.info(".initialiseJGroupsChannel(): initialise the JChannel, configFile-> "+getConfigFile()+", nodeName-> "+ nodeName);
+            this.echoServer = new JChannel(getConfigFile());
+            LOG.info(".initialiseJGroupsChannel(): Channel initialised, now setting channel name");
             getEchoServer().name(nodeName);
             getEchoServer().setDiscardOwnMessages(true);
-//            this.rpcHandler = new PegacornNodeEchoRPCHandler(getEchoServer());
             this.rpcDispatcher = new RpcDispatcher(getEchoServer(), this);
-            LOG.trace(".initialiseJGroupsChannel(): connect to cluster");
+            this.rpcDispatcher.setMembershipListener(this);
+            LOG.info(".initialiseJGroupsChannel(): connect to cluster");
             getEchoServer().connect(clusterName);
-            LOG.debug(".initialiseJGroupsChannel(): Exit, initialisation complete");
+            LOG.info(".initialiseJGroupsChannel(): Exit, initialisation complete");
         } catch(Exception ex){
             LOG.error(".initialiseJGroupsChannel(): Error --> " + ex.toString());
             getEchoServer().close();
@@ -94,7 +117,7 @@ public class PegacornNodeEchoPointServer implements Runnable{
     private void eventLoop() {
         while(true) {
             try {
-                Thread.sleep(10000);
+                Thread.sleep(30000);
                 performScan();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -104,7 +127,7 @@ public class PegacornNodeEchoPointServer implements Runnable{
 
     private void performScan(){
         // 1st, do a MultiCast test....
-        multicastScan();
+        // multicastScan();
         // Now do Unicast...
         unicastScan();
     }
@@ -112,7 +135,7 @@ public class PegacornNodeEchoPointServer implements Runnable{
     private void multicastScan(){
         LOG.debug(".multicastScan(): Entry");
         try {
-            LOG.info("--- Multicast Scan: Start ---");
+            LOG.debug("--- Multicast Scan: Start ---");
             Object objectSet[] = new Object[1];
             Class classSet[] = new Class[1];
             objectSet[0] = "(Multicast Request ("+ Instant.now().getEpochSecond() +")";
@@ -120,7 +143,7 @@ public class PegacornNodeEchoPointServer implements Runnable{
             RequestOptions requestOptions = new RequestOptions( ResponseMode.GET_ALL, RPC_MULTICAST_TIMEOUT, false);
             RspList<Object> rsps = rpcDispatcher.callRemoteMethods(null, "endpointPing", objectSet, classSet, requestOptions);
             rsps.forEach((key, val) -> LOG.info("<< " + val.getValue() + " from " + key));
-            LOG.info("--- Multicast Scan: End ---");
+            LOG.debug("--- Multicast Scan: End ---");
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         } catch (Exception e) {
@@ -132,18 +155,23 @@ public class PegacornNodeEchoPointServer implements Runnable{
     private void unicastScan(){
         LOG.debug(".unicastScan(): Entry");
         List<Address> addressList = getEchoServer().getView().getMembers();
-        LOG.debug("--- Unicast Scan: Start ---");
+        System.out.println("--- Unicast Scan: Start ---");
+        int counter = 0;
         for(Address currentAddress: addressList){
             if(getMyAddress().equals(currentAddress)){
                 LOG.debug(".unicastScan(): ScanAddress->{}... is me, not calling myself!", currentAddress);
             } else {
-                LOG.debug(".unicastScan(): ScanAddress->{}", currentAddress);
                 PegacornNodeEchoRPCPacket outcome = executeRPC(currentAddress);
-                LOG.debug(".unicastScan(): outcome->{}", outcome);
-                LOG.info("EndPoint Found:{}", outcome.getSourceAddressName());
+                String outcomeString = "Pass!";
+                if(outcome == null){
+                    outcomeString = "Fail!";
+                }
+                System.out.println("["+ counter + "]"+" member -> " + currentAddress + ", outcome -> " + outcomeString);
+                counter += 1;
+                LOG.debug("EndPoint Response->{}",outcome);
             }
         }
-        LOG.debug("--- Unicast Scan: End ---");
+        System.out.println("--- Unicast Scan: End ---");
         LOG.debug(".unicastScan(): Entry");
     }
 
@@ -166,19 +194,11 @@ public class PegacornNodeEchoPointServer implements Runnable{
             return(responsePacket);
         } catch (NoSuchMethodException e) {
             LOG.error(".executeRPC(): Error (NoSuchMethodException) ->{}", e.getMessage());
-            PegacornNodeEchoRPCPacket responsePacket = new PegacornNodeEchoRPCPacket();
-            responsePacket.setTargetAddressName(targetAddress.toString());
-            responsePacket.setSourceAddressName(getEchoServer().getAddress().toString());
-            responsePacket.setPayload("Error (NoSuchMethodException)" + e.getMessage());
-            return(responsePacket);
+            return(null);
         } catch (Exception e) {
             e.printStackTrace();
             LOG.error(".executeRPC: Error (GeneralException) ->{}", e.getMessage());
-            PegacornNodeEchoRPCPacket responsePacket = new PegacornNodeEchoRPCPacket();
-            responsePacket.setTargetAddressName(targetAddress.toString());
-            responsePacket.setSourceAddressName(getEchoServer().getAddress().toString());
-            responsePacket.setPayload("Error (GeneralException)" + e.getMessage());
-            return(responsePacket);
+            return(null);
         }
     }
 
@@ -194,7 +214,7 @@ public class PegacornNodeEchoPointServer implements Runnable{
             responsePacket.setPayload(line);
             responsePacket.setTargetAddressName(msg.getSourceAddressName());
             responsePacket.setSourceAddressName(getMyAddress().toString());
-            LOG.trace(".scanAnswer(): {}", responsePacket);
+            LOG.debug(".scanAnswer(): {}", responsePacket);
             String responseString = packetToString(responsePacket);
             LOG.debug(".scanAnswer(): Exit, responseString->{}", responseString);
             return (responseString);
@@ -204,7 +224,7 @@ public class PegacornNodeEchoPointServer implements Runnable{
     private String packetToString(PegacornNodeEchoRPCPacket packet){
         LOG.debug(".packetToString(): Entry, packet->{}", packet);
         if(packet == null){
-            LOG.debug(".packetToString(): packet is null");
+            LOG.info(".packetToString(): packet is null");
             return(null);
         }
         try {

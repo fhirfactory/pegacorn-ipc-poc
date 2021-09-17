@@ -37,3 +37,4 @@ jgroups-relay2-poc/target/maven-archiver/
 jgroups-relay2-poc/target/
 
 jgroups-wildfly-poc/target/
+/jgroups-kubeping-poc/target/
